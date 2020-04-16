@@ -87,26 +87,15 @@ public class Tool extends org.antlr.Tool {
 	public static boolean internalOption_watchNFAConversion = false;
 
 	public static void main(String[] args) {
-		//ErrorManager.info("ANTLR Parser Generator  Version " +
-		//				  VERSION + " (May 20, 2008)  1989-2008");
 		Tool antlr = new Tool(args);
 		antlr.process();
-		if ( ErrorManager.getNumErrors() > 0 ) {
+		if (ErrorManager.getNumErrors() > 0) {
 			System.exit(1);
 		}
-		System.exit(0);
 	}
-
-	public Tool() {
-	}
-
-	public Tool(String[] args) {
+	
+	Tool(String[] args) {
 		processArgs(args);
-		
-		//System.err.println("DKOLOVOS");
-		//System.err.println(outputDirectory);
-		//System.err.println(javaPackage);
-		
 	}
 
 	@Override
