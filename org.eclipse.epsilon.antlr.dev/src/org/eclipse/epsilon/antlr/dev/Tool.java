@@ -40,9 +40,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.GregorianCalendar;
-import java.util.Iterator;
 import java.util.List;
-
 import org.antlr.analysis.DFA;
 import org.antlr.analysis.DFAOptimizer;
 import org.antlr.analysis.DecisionProbe;
@@ -66,12 +64,12 @@ public class Tool extends org.antlr.Tool {
 
 	// Input parameters / option
 
-	protected List grammarFileNames = new ArrayList();
+	protected List<String> grammarFileNames = new ArrayList<>();
 	protected boolean generate_NFA_dot = false;
 	protected boolean generate_DFA_dot = false;
 	protected String outputDirectory = UNINITIALIZED_DIR;
 	protected int libDirectory;
-	protected List<String> libDirectories = new ArrayList<String>();
+	protected List<String> libDirectories = new ArrayList<>();
 	protected boolean debug = false;
 	protected boolean trace = false;
 	protected boolean profile = false;
@@ -111,6 +109,7 @@ public class Tool extends org.antlr.Tool {
 		
 	}
 
+	@Override
 	public void processArgs(String[] args) {
 		if ( args==null || args.length==0 ) {
 			help();
@@ -140,155 +139,158 @@ public class Tool extends org.antlr.Tool {
 					}
 				}
 			}
-			else if (args[i].equals("-package")) {
-				if (i + 1 >= args.length) {
-					System.err.println("missing package -package option; ignoring");
-				}
-				else {
-					i++;
-					javaPackage = args[i];
-				}
-			}
-			else if (args[i].equals("-lib")) {
-				if (i + 1 >= args.length) {
-					System.err.println("missing library directory with -lib option; ignoring");
-				}
-				else {
-					i++;
-					String libArg = args[i];
-					
-					libDirectories.add(".");
-					
-					for (String libDirectory : libArg.split(";")) {
-					
-						if ( libDirectory.endsWith("/") ||
-							 libDirectory.endsWith("\\") )
-						{
-							libDirectory =
-								libDirectory.substring(0,libDirectory.length()-1);
-						}
-						File outDir = new File(libDirectory);
-						if( !outDir.exists() ) {
-							ErrorManager.error(ErrorManager.MSG_DIR_NOT_FOUND,libDirectory);
-							//libDirectory = ".";
+			else
+				switch (args[i]) {
+					case "-package":
+						if (i + 1 >= args.length) {
+							System.err.println("missing package -package option; ignoring");
 						}
 						else {
-							libDirectories.add(libDirectory);
+							i++;
+							javaPackage = args[i];
 						}
-					}
+						break;
+					case "-lib":
+						if (i + 1 >= args.length) {
+							System.err.println("missing library directory with -lib option; ignoring");
+						}
+						else {
+							i++;
+							String libArg = args[i];
+							
+							libDirectories.add(".");
+							
+							for (String libDirectory : libArg.split(";")) {
+							
+								if ( libDirectory.endsWith("/") ||
+									 libDirectory.endsWith("\\") )
+								{
+									libDirectory =
+										libDirectory.substring(0,libDirectory.length()-1);
+								}
+								File outDir = new File(libDirectory);
+								if( !outDir.exists() ) {
+									ErrorManager.error(ErrorManager.MSG_DIR_NOT_FOUND,libDirectory);
+									//libDirectory = ".";
+								}
+								else {
+									libDirectories.add(libDirectory);
+								}
+							}
+						}
+						break;
+					case "-nfa":
+						generate_NFA_dot=true;
+						break;
+					case "-dfa":
+						generate_DFA_dot=true;
+						break;
+					case "-debug":
+						debug=true;
+						break;
+					case "-trace":
+						trace=true;
+						break;
+					case "-report":
+						report=true;
+						break;
+					case "-profile":
+						profile=true;
+						break;
+					case "-print":
+						printGrammar = true;
+						break;
+					case "-depend":
+						depend=true;
+						break;
+					case "-message-format":
+						if (i + 1 >= args.length) {
+							System.err.println("missing output format with -message-format option; using default");
+						}
+						else {
+							i++;
+							ErrorManager.setFormat(args[i]);
+						}
+						break;
+					case "-Xgrtree":
+						internalOption_PrintGrammarTree=true; // print grammar tree
+						break;
+					case "-Xdfa":
+						internalOption_PrintDFA=true;
+						break;
+					case "-Xnoprune":
+						DFAOptimizer.PRUNE_EBNF_EXIT_BRANCHES=false;
+						break;
+					case "-Xnocollapse":
+						DFAOptimizer.COLLAPSE_ALL_PARALLEL_EDGES=false;
+						break;
+					case "-Xdbgconversion":
+						NFAToDFAConverter.debug = true;
+						break;
+					case "-Xmultithreaded":
+						NFAToDFAConverter.SINGLE_THREADED_NFA_CONVERSION = false;
+						break;
+					case "-Xnomergestopstates":
+						DFAOptimizer.MERGE_STOP_STATES = false;
+						break;
+					case "-Xdfaverbose":
+						internalOption_ShowNFAConfigsInDFA = true;
+						break;
+					case "-Xwatchconversion":
+						internalOption_watchNFAConversion = true;
+						break;
+					case "-XdbgST":
+						CodeGenerator.EMIT_TEMPLATE_DELIMITERS = true;
+						break;
+					case "-Xmaxinlinedfastates":
+						if (i + 1 >= args.length) {
+							System.err.println("missing max inline dfa states -Xmaxinlinedfastates option; ignoring");
+						}
+						else {
+							i++;
+							CodeGenerator.MAX_ACYCLIC_DFA_STATES_INLINE = Integer.parseInt(args[i]);
+						}
+						break;
+					case "-Xm":
+						if (i + 1 >= args.length) {
+							System.err.println("missing max recursion with -Xm option; ignoring");
+						}
+						else {
+							i++;
+							NFAContext.MAX_SAME_RULE_INVOCATIONS_PER_NFA_CONFIG_STACK = Integer.parseInt(args[i]);
+						}
+						break;
+					case "-Xmaxdfaedges":
+						if (i + 1 >= args.length) {
+							System.err.println("missing max number of edges with -Xmaxdfaedges option; ignoring");
+						}
+						else {
+							i++;
+							DFA.MAX_STATE_TRANSITIONS_FOR_TABLE = Integer.parseInt(args[i]);
+						}
+						break;
+					case "-Xconversiontimeout":
+						if (i + 1 >= args.length) {
+							System.err.println("missing max time in ms -Xconversiontimeout option; ignoring");
+						}
+						else {
+							i++;
+							DFA.MAX_TIME_PER_DFA_CREATION = Integer.parseInt(args[i]);
+						}
+						break;
+					case "-Xnfastates":
+						DecisionProbe.verbose=true;
+						break;
+					case "-X":
+						Xhelp();
+						break;
+					default:
+						if (args[i].charAt(0) != '-') {
+							// Must be the grammar file
+							grammarFileNames.add(args[i]);
+						}
+						break;
 				}
-			}
-			else if (args[i].equals("-nfa")) {
-				generate_NFA_dot=true;
-			}
-			else if (args[i].equals("-dfa")) {
-				generate_DFA_dot=true;
-			}
-			else if (args[i].equals("-debug")) {
-				debug=true;
-			}
-			else if (args[i].equals("-trace")) {
-				trace=true;
-			}
-			else if (args[i].equals("-report")) {
-				report=true;
-			}
-			else if (args[i].equals("-profile")) {
-				profile=true;
-			}
-			else if (args[i].equals("-print")) {
-				printGrammar = true;
-			}
-			else if (args[i].equals("-depend")) {
-				depend=true;
-			}
-			else if (args[i].equals("-message-format")) {
-				if (i + 1 >= args.length) {
-					System.err.println("missing output format with -message-format option; using default");
-				}
-				else {
-					i++;
-					ErrorManager.setFormat(args[i]);
-				}
-			}
-			else if (args[i].equals("-Xgrtree")) {
-				internalOption_PrintGrammarTree=true; // print grammar tree
-			}
-			else if (args[i].equals("-Xdfa")) {
-				internalOption_PrintDFA=true;
-			}
-			else if (args[i].equals("-Xnoprune")) {
-				DFAOptimizer.PRUNE_EBNF_EXIT_BRANCHES=false;
-			}
-			else if (args[i].equals("-Xnocollapse")) {
-				DFAOptimizer.COLLAPSE_ALL_PARALLEL_EDGES=false;
-			}
-			else if (args[i].equals("-Xdbgconversion")) {
-				NFAToDFAConverter.debug = true;
-			}
-			else if (args[i].equals("-Xmultithreaded")) {
-				NFAToDFAConverter.SINGLE_THREADED_NFA_CONVERSION = false;
-			}
-			else if (args[i].equals("-Xnomergestopstates")) {
-				DFAOptimizer.MERGE_STOP_STATES = false;
-			}
-			else if (args[i].equals("-Xdfaverbose")) {
-				internalOption_ShowNFAConfigsInDFA = true;
-			}
-			else if (args[i].equals("-Xwatchconversion")) {
-				internalOption_watchNFAConversion = true;
-			}
-			else if (args[i].equals("-XdbgST")) {
-				CodeGenerator.EMIT_TEMPLATE_DELIMITERS = true;
-			}
-			else if (args[i].equals("-Xmaxinlinedfastates")) {
-				if (i + 1 >= args.length) {
-					System.err.println("missing max inline dfa states -Xmaxinlinedfastates option; ignoring");
-				}
-				else {
-					i++;
-					CodeGenerator.MAX_ACYCLIC_DFA_STATES_INLINE = Integer.parseInt(args[i]);
-				}
-			}
-			else if (args[i].equals("-Xm")) {
-				if (i + 1 >= args.length) {
-					System.err.println("missing max recursion with -Xm option; ignoring");
-				}
-				else {
-					i++;
-					NFAContext.MAX_SAME_RULE_INVOCATIONS_PER_NFA_CONFIG_STACK = Integer.parseInt(args[i]);
-				}
-			}
-			else if (args[i].equals("-Xmaxdfaedges")) {
-				if (i + 1 >= args.length) {
-					System.err.println("missing max number of edges with -Xmaxdfaedges option; ignoring");
-				}
-				else {
-					i++;
-					DFA.MAX_STATE_TRANSITIONS_FOR_TABLE = Integer.parseInt(args[i]);
-				}
-			}
-			else if (args[i].equals("-Xconversiontimeout")) {
-				if (i + 1 >= args.length) {
-					System.err.println("missing max time in ms -Xconversiontimeout option; ignoring");
-				}
-				else {
-					i++;
-					DFA.MAX_TIME_PER_DFA_CREATION = Integer.parseInt(args[i]);
-				}
-			}
-			else if (args[i].equals("-Xnfastates")) {
-				DecisionProbe.verbose=true;
-			}
-			else if (args[i].equals("-X")) {
-				Xhelp();
-			}
-			else {
-				if (args[i].charAt(0) != '-') {
-					// Must be the grammar file
-					grammarFileNames.add(args[i]);
-				}
-			}
 		}
 	}
 
@@ -303,12 +305,13 @@ public class Tool extends org.antlr.Tool {
 		}
 		*/
 
+	@Override
 	public void process()  {
 		int numFiles = grammarFileNames.size();
 		boolean exceptionWhenWritingLexerFile = false;
 		String lexerGrammarFileName = null;		// necessary at this scope to have access in the catch below
 		for (int i = 0; i < numFiles; i++) {
-			String grammarFileName = (String) grammarFileNames.get(i);
+			String grammarFileName = grammarFileNames.get(i);
 			if ( numFiles > 1 && !depend ) {
 				System.out.println(grammarFileName);
 			}
@@ -316,8 +319,8 @@ public class Tool extends org.antlr.Tool {
 				if ( depend ) {
 					BuildDependencyGenerator dep =
 						new BuildDependencyGenerator(this, grammarFileName);
-					List outputFiles = dep.getGeneratedFileList();
-					List dependents = dep.getDependenciesFileList();
+					dep.getGeneratedFileList();
+					dep.getDependenciesFileList();
 					//System.out.println("output: "+outputFiles);
 					//System.out.println("dependents: "+dependents);
 					System.out.println(dep.getDependencies());
@@ -355,10 +358,8 @@ public class Tool extends org.antlr.Tool {
 				//System.out.println("lexer grammar:\n"+lexerGrammarStr);
 				if ( grammar.type==Grammar.COMBINED && lexerGrammarStr!=null ) {
 					lexerGrammarFileName = grammar.getImplicitlyGeneratedLexerFileName();
-					try {
-						Writer w = getOutputFile(grammar,lexerGrammarFileName);
+					try (Writer w = getOutputFile(grammar,lexerGrammarFileName)) {
 						w.write(lexerGrammarStr);
-						w.close();
 					}
 					catch (IOException e) {
 						// emit different error message when creating the implicit lexer fails
@@ -366,8 +367,7 @@ public class Tool extends org.antlr.Tool {
 						exceptionWhenWritingLexerFile = true;
 						throw e;
 					}
-					try {
-						StringReader sr = new StringReader(lexerGrammarStr);
+					try (StringReader sr = new StringReader(lexerGrammarStr)) {
 						Grammar lexerGrammar = new Grammar();
 						lexerGrammar.composite.watchNFAConversion = internalOption_watchNFAConversion;
 						lexerGrammar.implicitLexer = true;
@@ -378,8 +378,6 @@ public class Tool extends org.antlr.Tool {
 
 						lexerGrammar.importTokenVocabulary(grammar);
 						lexerGrammar.parseAndBuildAST(sr);
-
-						sr.close();
 
 						lexerGrammar.composite.assignTokenTypes();
 						lexerGrammar.composite.defineGrammarSymbols();
@@ -418,30 +416,43 @@ public class Tool extends org.antlr.Tool {
 			}
 			*/
 		}
-		
-		addPackageDeclarations();
-		
+		addPackageDeclarations();	
 	}
 
 	protected void addPackageDeclarations() {
-		
 		File outputDir = new File(outputDirectory);
-		
 		for (File f : outputDir.listFiles()) {
 			if (f.getName().indexOf('_') > -1) {
 				try {
-					FileUtils.prepend("package " + javaPackage + ";\r\n\r\n",  f);
+					prepend("package " + javaPackage + ";\r\n\r\n",  f);
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
 		}
-		
 	}
 	
+	protected static void prepend(String str, File f) throws Exception {
+		try (FileReader fr = new FileReader(f)) {
+			StringBuilder buffer = new StringBuilder();
+			try (BufferedReader br = new BufferedReader(fr)) {
+			
+				String line = br.readLine();
+				
+				while (line != null) {
+					buffer.append(line + "\r\n");
+					line = br.readLine();
+				}
+			}
+			try (FileWriter fw = new FileWriter(f)) {
+				fw.write(str + buffer.toString());
+			}
+		}
+	}
 	
 	/** Get a grammar mentioned on the command-line and any delegates */
+	@Override
 	public Grammar getRootGrammar(String grammarFileName)
 		throws IOException
 	{
@@ -452,13 +463,12 @@ public class Tool extends org.antlr.Tool {
 		CompositeGrammar composite = new CompositeGrammar();
 		Grammar grammar = new Grammar(this,grammarFileName,composite);
 		composite.setDelegationRoot(grammar);
-		FileReader fr = null;
-		fr = new FileReader(grammarFileName);
-		BufferedReader br = new BufferedReader(fr);
-		grammar.parseAndBuildAST(br);
-		composite.watchNFAConversion = internalOption_watchNFAConversion;
-		br.close();
-		fr.close();
+		try (FileReader fr = new FileReader(grammarFileName)) {
+			try (BufferedReader br = new BufferedReader(fr)) {
+				grammar.parseAndBuildAST(br);
+				composite.watchNFAConversion = internalOption_watchNFAConversion;
+			}
+		}
 		return grammar;
 	}
 
@@ -469,6 +479,7 @@ public class Tool extends org.antlr.Tool {
 	 *  After all NFA, comes DFA conversion for root grammar then code gen for
 	 *  root grammar.  DFA and code gen for delegates comes next.
 	 */
+	@Override
 	protected void generateRecognizer(Grammar grammar) {
 		String language = (String)grammar.getOption("language");
 		if ( language!=null ) {
@@ -492,7 +503,7 @@ public class Tool extends org.antlr.Tool {
 
 			List<Grammar> delegates = grammar.getDirectDelegates();
 			for (int i = 0; delegates!=null && i < delegates.size(); i++) {
-				Grammar delegate = (Grammar)delegates.get(i);
+				Grammar delegate = delegates.get(i);
 				if ( delegate!=grammar ) { // already processing this one
 					generateRecognizer(delegate);
 				}
@@ -500,6 +511,7 @@ public class Tool extends org.antlr.Tool {
 		}
 	}
 
+	@Override
 	public void generateDFAs(Grammar g) {
 		for (int d=1; d<=g.getNumberOfDecisions(); d++) {
 			DFA dfa = g.getLookaheadDFA(d);
@@ -523,13 +535,13 @@ public class Tool extends org.antlr.Tool {
 		}
 	}
 
+	@Override
 	protected void generateNFAs(Grammar g) {
 		DOTGenerator dotGenerator = new DOTGenerator(g);
-		Collection rules = g.getAllImportedRules();
+		Collection<Rule> rules = g.getAllImportedRules();
 		rules.addAll(g.getRules());
 
-		for (Iterator itr = rules.iterator(); itr.hasNext();) {
-			Rule r = (Rule) itr.next();
+		for (Rule r : rules) {
 			try {
 				String dot = dotGenerator.getDOT(r.startState);
 				if ( dot!=null ) {
@@ -542,14 +554,16 @@ public class Tool extends org.antlr.Tool {
 		}
 	}
 
+	@Override
 	protected void writeDOTFile(Grammar g, Rule r, String dot) throws IOException {
 		writeDOTFile(g, r.grammar.name+"."+r.name, dot);
 	}
 
+	@Override
 	protected void writeDOTFile(Grammar g, String name, String dot) throws IOException {
-		Writer fw = getOutputFile(g, name+".dot");
-		fw.write(dot);
-		fw.close();
+		try (Writer fw = getOutputFile(g, name+".dot")) {
+			fw.write(dot);
+		}
 	}
 
 	private static void help() {
@@ -586,6 +600,7 @@ public class Tool extends org.antlr.Tool {
 		System.err.println("  -Xnfastates            for nondeterminisms, list NFA states for each path");
 	}
 
+	@Override
 	public void setOutputDirectory(String outputDirectory) {
 		this.outputDirectory = outputDirectory;
 	}
@@ -607,6 +622,7 @@ public class Tool extends org.antlr.Tool {
 	 *
 	 *  If outputDirectory==null then write a String.
 	 */
+	@Override
 	public Writer getOutputFile(Grammar g, String fileName) throws IOException {
 		if ( outputDirectory==null ) {
 			return new StringWriter();
@@ -623,6 +639,7 @@ public class Tool extends org.antlr.Tool {
 		return new BufferedWriter(fw);
 	}
 
+	@Override
 	public File getOutputDirectory(String fileNameWithPath) {
 		File outputDir = new File(outputDirectory);
 		String fileDirectory = getFileDirectory(fileNameWithPath);
@@ -662,6 +679,7 @@ public class Tool extends org.antlr.Tool {
 	}
 
 	/** Name a file in the -lib dir.  Imported grammars and .tokens files */
+	@Override
 	public String getLibraryFile(String fileName) throws IOException {
 		for (String libDirectory : libDirectories) {
 			String f = libDirectory+File.separator+fileName;
@@ -672,6 +690,7 @@ public class Tool extends org.antlr.Tool {
 		return null;
 	}
 
+	@Override
 	public String getLibraryDirectory() {
 		new Exception("LIBOP").printStackTrace();
 		return null;
@@ -682,6 +701,7 @@ public class Tool extends org.antlr.Tool {
 	 *  often do "java org.antlr.Tool grammars/*.g3"  So the file will be
 	 *  "grammars/foo.g3" etc...  This method returns "grammars".
 	 */
+	@Override
 	public String getFileDirectory(String fileName) {
 		File f = new File(fileName);
 		return f.getParent();
@@ -691,6 +711,7 @@ public class Tool extends org.antlr.Tool {
 	 *  in -o output path.  antlr -o foo T.g U.g where U needs T.tokens
 	 *  won't work unless we look in foo too.
 	 */
+	@Override
 	public File getImportedVocabFile(String vocabName) {
 		
 		for (String libDirectory : libDirectories) {
@@ -710,6 +731,7 @@ public class Tool extends org.antlr.Tool {
 	}	
 
 	/** If the tool needs to panic/exit, how do we do that? */
+	@Override
 	public void panic() {
 		throw new Error("ANTLR panic");
 	}
