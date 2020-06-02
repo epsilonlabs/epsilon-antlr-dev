@@ -41,6 +41,7 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.GregorianCalendar;
 import java.util.List;
+
 import org.antlr.analysis.DFA;
 import org.antlr.analysis.DFAOptimizer;
 import org.antlr.analysis.DecisionProbe;
@@ -474,6 +475,9 @@ public class Tool extends org.antlr.Tool {
 		if ( language!=null ) {
 			CodeGenerator generator = new CodeGenerator(this, grammar, language);
 			grammar.setCodeGenerator(generator);
+			String grammarName = grammar.getFileName().substring(grammar.getFileName().lastIndexOf(File.separator) + 1);
+			
+			grammar.setFileName(grammarName);
 			generator.setDebug(debug);
 			generator.setProfile(profile);
 			generator.setTrace(trace);
