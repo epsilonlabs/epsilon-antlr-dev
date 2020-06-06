@@ -475,8 +475,7 @@ public class Tool extends org.antlr.Tool {
 		if ( language!=null ) {
 			CodeGenerator generator = new CodeGenerator(this, grammar, language);
 			grammar.setCodeGenerator(generator);
-			String grammarName = grammar.getFileName().substring(grammar.getFileName().lastIndexOf(File.separator) + 1);
-			
+			String grammarName = grammar.getFileName().substring(grammar.getFileName().lastIndexOf('/') + 1);
 			grammar.setFileName(grammarName);
 			generator.setDebug(debug);
 			generator.setProfile(profile);
